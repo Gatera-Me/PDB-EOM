@@ -1,164 +1,123 @@
 # PDB-EOM
 Oracle Enterprise Manager (OEM) is a comprehensive management tool provided by Oracle for monitoring and managing Oracle databases, applications, and systems.A Pluggable Database (PDB) is a portable, self-contained database that resides within a Container Database (CDB) in Oracle's Multitenant architecture, introduced with Oracle Database 12c.
 
-Attempt to select the instance name from v$instance
-SQL> select instance from v$instance;
-select instance from v$instance
-       *
-ERROR at line 1:
-ORA-00904: "INSTANCE": invalid identifier
 
--- Corrected query to select the instance name
-SQL> select instance_name from v$instance;
+ SQL Commands and Explanations
 
-INSTANCE_NAME
-----------------
-orcl1
+ Selecting the Instance Name
+```sql
+select instance_name from v$instance;
+```
+- Purpose: This command retrieves the name of the current instance.
+- Output: `orcl1` indicates the current database instance name.
 
--- Show the current container name
-SQL> show con_name;
+ Show the Current Container Name
+```sql
+show con_name;
+```
+- Purpose: Displays the name of the current container.
+- Output: `CDB$ROOT` indicates that you are connected to the root container of the CDB.
 
-CON_NAME
-------------------------------
-CDB$ROOT
+ Show All Pluggable Databases (PDBs)
+```sql
+show pdbs;
+```
+- Purpose: Lists all PDBs in the container database (CDB).
+- Output: Lists `PDB$SEED`, which is in `READ ONLY` mode and indicates no other PDBs are open.
 
--- Show all pluggable databases (PDBs)
-SQL> show pdbs;
+ Select PDB Name and Status from CDB View
+```sql
+select pdb_name, status from cdb_pdbs;
+```
+- Purpose: Retrieves the names and statuses of all PDBs in the CDB.
+- Output: Only `PDB$SEED` is shown, which is `NORMAL`.
 
-    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
----------- ------------------------------ ---------- ----------
-         2 PDB$SEED                       READ ONLY  NO
+ Show Database Name and Open Mode
+```sql
+SELECT NAME, OPEN_MODE FROM V$DATABASE;
+```
+- Purpose: Displays the database name and its open mode.
+- Output: Shows `ORCL1` in `READ WRITE` mode, meaning it's available for data manipulation.
 
--- Select the PDB name and status from the CDB view
-SQL> select pdb_name, status from cdb_pdbs;
+ Retrieve Specific Database Parameters
+```sql
+SELECT NAME, VALUE FROM V$PARAMETER WHERE NAME IN ('db_create_file_dest', 'control_files', 'db_recovery_file_dest');
+```
+- Purpose: Retrieves essential database parameters like the locations for creating files and recovery.
+- Output: Shows the control files and directories for the database files.
 
-PDB_NAME
---------------------------------------------------------------------------------
-STATUS
-----------
-PDB$SEED
-NORMAL
+ Create New Pluggable Databases
+```sql
+CREATE PLUGGABLE DATABASE pdb1 ADMIN USER pdbadmin IDENTIFIED BY gatera;
+CREATE PLUGGABLE DATABASE plsql_class2024db ADMIN USER pdbadmin IDENTIFIED BY gatera;
+```
+- Purpose: Creates two new PDBs named `pdb1` and `plsql_class2024db` with an admin user `pdbadmin` and password `gatera`.
+- Output: Confirms that both PDBs were successfully created.
 
--- Show the database name and its open mode
-SQL> SELECT NAME, OPEN_MODE FROM V$DATABASE;
+ Commit Changes
+```sql
+commit;
+```
+- Purpose: Finalizes any changes made (if applicable) to the database.
+- Output: Confirms the commit was successful.
 
-NAME      OPEN_MODE
---------- --------------------
-ORCL1     READ WRITE
+ Show Updated List of PDBs
+```sql
+show pdbs;
+```
+- Purpose: Displays the updated list of PDBs after creation.
+- Output: Shows `PDB$SEED`, `PLSQL_CLASS2024DB`, and `PDB1` in `MOUNTED` mode.
 
--- Retrieve specific database parameters
-SQL> SELECT NAME, VALUE FROM V$PARAMETER WHERE NAME IN ('db_create_file_dest', 'control_files', 'db_recovery_file_dest');
+ Open All Pluggable Databases
+```sql
+ALTER PLUGGABLE DATABASE ALL OPEN;
+```
+- Purpose: Opens all mounted PDBs.
+- Output: Confirms that the operation was successful.
 
-NAME
---------------------------------------------------------------------------------
-VALUE
---------------------------------------------------------------------------------
-control_files
-D:\ORACLE1\ORADATA\ORCL1\CONTROLFILE\O1_MF_MHM32NJW_.CTL, D:\ORACLE1\FRA\ORCL1\C
-ONTROLFILE\O1_MF_MHM32NRP_.CTL
+ Show Updated Status of PDBs
+```sql
+show pdbs;
+```
+- Purpose: Displays the current status of all PDBs.
+- Output: All created PDBs are now in `READ WRITE` mode.
 
-db_create_file_dest
-D:\Oracle1\oradata
+ Select the Name and Open Mode of All PDBs
+```sql
+SELECT name, open_mode FROM v$pdbs;
+```
+- Purpose: Retrieves the names and open modes of all PDBs.
+- Output: Shows that both `PLSQL_CLASS2024DB` and `PDB1` are in `READ WRITE` mode.
 
-db_recovery_file_dest
-D:\Oracle1\fra
+ Set Current Session to a Specific PDB
+```sql
+ALTER SESSION SET CONTAINER = plsql_class2024db;
+```
+- Purpose: Changes the current session context to the specified PDB.
+- Output: Confirms the session has been altered.
 
-NAME
---------------------------------------------------------------------------------
-VALUE
---------------------------------------------------------------------------------
+ Create a New User in the Current PDB
+```sql
+CREATE USER ir_plsqlauca IDENTIFIED BY gatera;
+```
+- Purpose: Creates a new user in the current PDB (`plsql_class2024db`).
+- Output: Confirms the user was successfully created.
 
--- Create a new pluggable database named pdb1 with admin user
-SQL> CREATE PLUGGABLE DATABASE pdb1
-  2     ADMIN USER pdbadmin IDENTIFIED BY gatera;
+ Grant All Privileges to the Newly Created User
+```sql
+GRANT all privileges to ir_plsqlauca;
+```
+- Purpose: Grants all privileges to the newly created user, allowing full access to the database.
+- Output: Confirms that the privileges were granted successfully.
 
-Pluggable database created.
+ Drop the Pluggable Database
+```sql
+DROP PLUGGABLE DATABASE ir_to_delete_pdb INCLUDING DATAFILES;
+```
+- Purpose: Deletes the specified PDB (`ir_to_delete_pdb`) and removes its associated data files.
+- Output: Confirms that the PDB was dropped successfully.
 
--- Create another pluggable database named plsql_class2024db with admin user
-SQL> create pluggable database plsql_class2024db admin user pdbadmin identified by gatera;
+Conclusion
+The sequence of commands executed demonstrates the creation, management, and deletion of Pluggable Databases in Oracle. Proper privileges were granted to users, and all operations were successfully completed. You now have a well-structured approach to managing PDBs, which will be beneficial for your ongoing database tasks. If you need any further assistance or explanations, feel free to ask!
 
-Pluggable database created.
-
--- Commit the changes made (if any)
-SQL> commit;
-
-Commit complete.
-
--- Show updated list of PDBs
-SQL> show pdbs;
-
-    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
----------- ------------------------------ ---------- ----------
-         2 PDB$SEED                       READ ONLY  NO
-         3 PLSQL_CLASS2024DB              MOUNTED
-         4 PDB1                           MOUNTED
-
--- Open all pluggable databases
-SQL> ALTER PLUGGABLE DATABASE ALL OPEN;
-
-Pluggable database altered.
-
-SQL>
--- Show the updated status of PDBs
-SQL> show pdbs;
-
-    CON_ID CON_NAME                       OPEN MODE  RESTRICTED
----------- ------------------------------ ---------- ----------
-         2 PDB$SEED                       READ ONLY  NO
-         3 PLSQL_CLASS2024DB              READ WRITE NO
-         4 PDB1                           READ WRITE NO
-
--- Select the name and open mode of all PDBs
-SQL> SELECT name, open_mode FROM v$pdbs;
-
-NAME
---------------------------------------------------------------------------------
-OPEN_MODE
-----------
-PDB$SEED
-READ ONLY
-
-PLSQL_CLASS2024DB
-READ WRITE
-
-PDB1
-READ WRITE
-
--- Set the current session to the plsql_class2024db PDB
-SQL> ALTER SESSION SET CONTAINER = plsql_class2024db;
-
-Session altered.
-
--- Create a new user in the current PDB
-SQL> CREATE USER ir_plsqlauca IDENTIFIED BY gatera;
-
-User created.
-
--- Grant all privileges to the newly created user
-SQL> GRANT all privileges to ir_plsqlauca;
-
-Grant succeeded.
-
--- Commit the changes made (if any)
-SQL> commit;
-
-Commit complete.
-
--- Show the current container name
-SQL> show con_name;
-
-CON_NAME
-------------------------------
-CDB$ROOT
-
--- Create a new pluggable database named ir_to_delete_pdb with admin user
-SQL> CREATE PLUGGABLE DATABASE ir_to_delete_pdb
-  2     ADMIN USER pdbadmin IDENTIFIED BY gatera;
-
-Pluggable database created. -- The pluggable database is created
-
--- Drop the pluggable database ir_to_delete_pdb including its datafiles
-SQL> DROP PLUGGABLE DATABASE ir_to_delete_pdb INCLUDING DATAFILES;
-
-Pluggable database dropped.
 
